@@ -18,8 +18,8 @@ From any Claude Code project, Claude can consult your KB registry and invoke the
 Clone the repo, then open Claude Code in it:
 
 ```bash
-git clone <repo-url>
-cd kb-setup
+git clone https://github.com/ScottExMachina/kb-management.git
+cd kb-management
 claude .
 ```
 
