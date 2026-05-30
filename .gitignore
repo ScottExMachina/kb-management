@@ -1,0 +1,10 @@
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# Personal KB content — never commit to distributable repo
+vault/
+contents/
