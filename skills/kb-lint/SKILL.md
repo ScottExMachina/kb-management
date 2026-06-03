@@ -1,10 +1,30 @@
+---
+name: kb-lint
+description: |
+  Validate and repair a Personal Knowledge Base: find contradictions, stale
+  claims, orphan pages, broken wikilinks, missing/invalid categories, tag-rule
+  violations, and index/log format issues, and manage schema migrations. Use when
+  the user asks to lint, health-check, clean up, or fix the KB, or after a schema
+  update from /kb-setup. Only acts inside a KB (a folder with a kb.config.md at
+  its root).
+version: 0.1.0
+license: MIT
+---
+
 # kb-lint
 
 Validate the knowledge base structure, find inconsistencies and gaps, and manage migrations.
 
 ## When to use
 
-Invoke with `/kb-lint` to health-check the knowledge base, or after running `update.sh` to check whether a schema update requires structural changes to existing content.
+Invoke with `/kb-lint` to health-check the knowledge base, or after a schema update (via `/kb-setup` or `/plugin update kb-management`) to check whether the update requires structural changes to existing content.
+
+## Step 0 — KB guard (do this first)
+
+Check for `kb.config.md` in the current working directory (the KB root).
+
+- **If it is missing:** this folder is not a knowledge base. Do nothing. Say: "No `kb.config.md` here — this doesn't look like a KB, so there's nothing to lint. `cd` into a KB and try again." Then stop.
+- **If it is present:** continue.
 
 ## Steps
 

@@ -1,3 +1,15 @@
+---
+name: kb-ingest
+description: |
+  Ingest a new source into a Personal Knowledge Base. Use when files are in the
+  KB's ingest/ folder and the user wants them processed, filed, or added to the
+  knowledge base. Moves the source to raw/, summarizes it, creates or updates
+  wikilinked pages and a source summary, and updates index.md and log.md. Only
+  acts inside a KB (a folder with a kb.config.md at its root).
+version: 0.1.0
+license: MIT
+---
+
 # kb-ingest
 
 Ingest a new source from `ingest/` into the knowledge base.
@@ -5,6 +17,13 @@ Ingest a new source from `ingest/` into the knowledge base.
 ## When to use
 
 Invoke with `/kb-ingest` when one or more files have been placed in `ingest/` and are ready to be processed.
+
+## Step 0 — KB guard (do this first)
+
+Check for `kb.config.md` in the current working directory (the KB root).
+
+- **If it is missing:** this folder is not a knowledge base. Do nothing. Say: "No `kb.config.md` here — this doesn't look like a KB, so I'm not ingesting anything. Run `/kb-setup` to initialize one, or `cd` into an existing KB." Then stop.
+- **If it is present:** continue. The KB schema is in `.claude/CLAUDE.md` (auto-loaded as project context); rely on it for templates, the category system, and naming conventions.
 
 ## Steps
 

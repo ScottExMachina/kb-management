@@ -2,6 +2,31 @@
 
 ---
 
+## 0. Status & Current Architecture
+
+> This document is the original design spec and is kept for intent and rationale. The system is now packaged as a **Claude Code plugin** (`kb-management`), which changes how several requirements below are realized. Where the sections that follow describe shell scripts or a subagent, read them against this mapping.
+
+**Engine vs. instance ownership.** The engine — the skills and commands — lives *in the plugin* and is shared machine-wide. Only per-instance scaffolding (the schema `CLAUDE.md`, `kb.config.md`, `index.md`, `log.md`, and the content folders) is copied into each KB. KBs no longer carry their own copies of the skills, so they don't drift.
+
+**Two update channels.**
+- `/plugin update kb-management` updates the engine (skills + commands) everywhere at once.
+- `/kb-setup` (one KB) or `/kb-setup --all` (every registered KB; `--dry-run` to preview) refreshes the plugin-owned scaffolding inside each KB.
+
+**Mapping from this spec to the plugin:**
+
+| Spec concept | Plugin realization |
+|---|---|
+| `install.sh` (§5) and per-instance copied skills | `/kb-setup` command + `kb-template/` scaffolding; skills come from the plugin, not copied in |
+| `update.sh` (§7.1) | `/plugin update` (engine) + `/kb-setup --all` (instances) |
+| `remove.sh` (§8) | `/kb-remove` command |
+| KB-Lookup **subagent** (§2.3, §3.2) | `kb-lookup` **skill** — so subagents can use it too; read-only by instruction |
+| Per-instance marker | `kb.config.md` at the KB root (also carries `kb_version`) |
+| Instance `contents/` subfolder | content folders live at the KB root (`ingest/ raw/ sources/ pages/ notes/`) |
+
+Existing KBs made by the pre-plugin installer are migrated in place by `/kb-setup` (removes redundant copied-in skills, adds `kb.config.md`, refreshes the schema), asking before any deletion.
+
+---
+
 ## 1. Overview
 
 This document defines the requirements for a modular, multi-instance Knowledge Base (KB) system built on top of Claude Code. The system allows users to install one or more independent knowledge bases that can be queried from any Claude Code project session. Each KB is self-contained and independently versioned. A single global agent handles all KB queries, routing to the correct KB based on a centrally maintained registry.

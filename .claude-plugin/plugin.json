@@ -1,0 +1,18 @@
+{
+  "name": "kb-management",
+  "description": "Personal Knowledge Base for Claude Code: drop sources into a KB, let Claude build and maintain a structured, wikilinked wiki of concepts, people, and organizations, and look up any registered KB from any session. Bundles ingest/query/lint/lookup skills plus setup and remove commands.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ScottExMachina",
+    "email": "287039425+ScottExMachina@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "knowledge-base",
+    "knowledge-management",
+    "pkm",
+    "notes",
+    "wiki",
+    "skills"
+  ]
+}

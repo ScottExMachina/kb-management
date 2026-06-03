@@ -1,50 +1,45 @@
 # Personal Knowledge Base
 
-A local, AI-powered knowledge base that runs inside [Claude Code](https://claude.ai/code). Drop sources into an inbox folder, run `/kb-ingest`, and Claude builds and maintains a structured wiki of concepts, people, organizations, and ideas — with full wikilink cross-references and an append-only log.
+A Claude Code plugin that turns any folder into a local, AI-powered knowledge base. Drop sources into an `ingest/` folder, run `/kb-ingest`, and Claude builds and maintains a structured wiki of concepts, people, organizations, and ideas — with wikilink cross-references and an append-only log. Query any KB from any session.
 
 ## How it works
 
-- **Global layer** (`~/.claude/`) — a registry of all your KB instances and a read-only lookup agent that can be invoked from any Claude Code session
-- **Local layer** (per KB) — the schema, three management skills, and your content
+The plugin separates the **engine** from your **content**:
 
-From any Claude Code project, Claude can consult your KB registry and invoke the `kb-lookup` agent to pull relevant context before answering. From within a KB project, you invoke skills directly to ingest, query, and maintain content.
+- **Engine (the plugin)** — the skills (`kb-ingest`, `kb-query`, `kb-lint`, `kb-lookup`) and commands (`kb-setup`, `kb-remove`) live in the plugin and are shared machine-wide. Update them once with `/plugin update`; every KB benefits.
+- **Instance (each KB)** — a folder you own, holding your sources and pages plus a `kb.config.md` marker, a refreshed copy of the schema, `index.md`, and `log.md`. The plugin never stores your content.
+- **Global registry** (`~/.claude/CLAUDE.md`) — a table of your KBs and their paths. From any project, Claude consults it and uses the `kb-lookup` skill to pull relevant context before answering.
+
+Because the engine is in the plugin and not copied into each KB, your knowledge bases never drift, and updating logic is a single `/plugin update`.
 
 ## Prerequisites
 
 - [Claude Code](https://claude.ai/code) installed and authenticated
 
-## Setup
-
-Clone the repo, then open Claude Code in it:
-
-```bash
-git clone https://github.com/ScottExMachina/kb-management.git
-cd kb-management
-claude .
-```
-
-Then run:
+## Install
 
 ```
-/kb-management install
+/plugin marketplace add https://github.com/ScottExMachina/kb-management
+/plugin install kb-management
 ```
 
-Claude will ask for:
-1. **Install directory** — where the KB instance lives (e.g. `~/knowledge/personal-kb`)
-2. **Domain name** — a short identifier for the registry (e.g. `personal`, `work`, `research`)
-3. **Description** — one line describing what this KB contains
+(For local development, point `marketplace add` at the repo path instead: `/plugin marketplace add /Users/scott/Code/kb-management`.)
 
-When complete, open the install directory in Claude Code:
+## Create a knowledge base
 
-```bash
-claude ~/knowledge/personal-kb
+Open the folder you want to use as a KB (it can be empty), then run:
+
 ```
+/kb-setup
+```
+
+Claude asks for a **domain** (a short identifier like `tech` or `consulting`) and a one-line **description**, scaffolds the structure, writes `kb.config.md`, and registers the KB in `~/.claude/CLAUDE.md`. `/kb-setup` is idempotent — run it again any time to sync the latest plugin-owned files; it never overwrites your content.
+
+You can also target a folder without opening it: `/kb-setup ~/knowledge/tech-kb`.
 
 ## Daily use
 
-### Ingesting a source
-
-Drop any file (PDF, markdown, text) into `ingest/`, then:
+**Ingest a source.** Drop any file (PDF, markdown, text) into `ingest/`, then:
 
 ```
 /kb-ingest
@@ -52,63 +47,61 @@ Drop any file (PDF, markdown, text) into `ingest/`, then:
 
 Claude moves the file to `raw/`, summarizes it, creates or updates pages in `pages/`, and updates the index and log.
 
-### Querying the KB
-
-From within the KB project:
+**Query a KB.** From inside the KB:
 
 ```
 /kb-query
 ```
 
-From any other Claude Code project, Claude will consult the global registry and invoke the `kb-lookup` agent automatically when your query touches a registered domain.
+From any other project, Claude consults the registry and uses the `kb-lookup` skill automatically when your question touches a registered domain. Because `kb-lookup` is a skill (not an agent), subagents can use it too.
 
-### Validating the KB
+**Validate a KB.**
 
 ```
 /kb-lint
 ```
 
-Checks for broken wikilinks, orphan pages, missing categories, contradictions, and data gaps. Offers to auto-migrate or guide manual fixes.
-
-## Directory structure
-
-```
-<install-dir>/
-├── .claude/
-│   ├── CLAUDE.md              # KB schema (read-only)
-│   └── skills/
-│       ├── kb-ingest/SKILL.md
-│       ├── kb-query/SKILL.md
-│       └── kb-lint/SKILL.md
-├── index.md                   # Content catalog
-├── log.md                     # Append-only operation record
-├── ingest/                    # Drop sources here
-├── raw/                       # Archived originals (never modified)
-├── sources/                   # Source summary pages
-├── pages/                     # Knowledge base pages
-└── notes/                     # Your personal notes (Claude reads, never writes)
-```
+Checks for broken wikilinks, orphan pages, missing categories, contradictions, and gaps. Offers to auto-migrate or guide manual fixes.
 
 ## Multiple knowledge bases
 
-Run `/kb-management install` again from this repo to set up additional KB instances. Each gets its own entry in the global registry. When querying from any project, Claude routes to the correct KB based on the domain.
+Run `/kb-setup` in another folder to add another KB. Each gets its own registry entry; cross-project queries route to the right KB by domain.
 
 ## Updating
 
-Pull the latest version of this repo, then open Claude Code in it and run:
+Two independent channels:
 
-```
-/kb-management update           # Update all registered instances
-/kb-management update --dry-run # Preview changes without applying
-```
+| What | How |
+|------|-----|
+| Engine (skills + commands) | `/plugin update kb-management` — machine-wide, automatic |
+| Per-KB scaffolding (schema, config, new dirs) | `/kb-setup` in one KB, or `/kb-setup --all` for every registered KB |
+
+`/kb-setup --all --dry-run` previews every change across all KBs without writing.
+
+## Migrating KBs from the old installer
+
+Earlier KBs were created by a script that **copied** the skills into each KB's `.claude/skills/` and a `kb-lookup` agent into `~/.claude/agents/`. Those copies are now redundant. Running `/kb-setup` (or `/kb-setup --all`) on such a KB detects the old layout and offers to clean it up: it removes the copied-in skills, adds `kb.config.md`, refreshes the schema, and updates the registry wording — asking before any deletion, and never touching your content.
 
 ## Removing a KB
 
-Open Claude Code in this repo and run:
-
 ```
-/kb-management remove
+/kb-remove
 ```
 
-Removes the registry entry. Your content files are never deleted — remove them manually if needed.
+Removes the registry entry only. Your content files are never deleted. To uninstall the engine entirely, run `/plugin uninstall kb-management`.
 
+## KB directory structure
+
+```
+<kb>/
+├── .claude/
+│   └── CLAUDE.md              # schema (plugin-owned, refreshed by /kb-setup)
+├── kb.config.md               # KB marker + version + domain — do not delete
+├── index.md                   # content catalog
+├── log.md                     # append-only operation record
+├── ingest/                    # drop sources here
+├── raw/                       # archived originals (never modified)
+├── sources/                   # source summary pages
+├── pages/                     # knowledge base pages
+└── notes/                     # your personal notes (Claude reads, never writes)
+```
