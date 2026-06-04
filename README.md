@@ -27,15 +27,15 @@ Because the engine is in the plugin and not copied into each KB, your knowledge 
 
 ## Create a knowledge base
 
-Open the folder you want to use as a KB (it can be empty), then run:
+Run:
 
 ```
 /kb-setup
 ```
 
-Claude asks for a **domain** (a short identifier like `tech` or `consulting`) and a one-line **description**, scaffolds the structure, writes `kb.config.md`, and registers the KB in `~/.claude/CLAUDE.md`. `/kb-setup` is idempotent — run it again any time to sync the latest plugin-owned files; it never overwrites your content.
+With no arguments, `/kb-setup` asks what you want to do — **start a new KB** (it then prompts you for the path) or **sync an existing one**. For a new KB it also asks for a **domain** (a short identifier like `tech` or `consulting`) and a one-line **description**, scaffolds the structure, writes `kb.config.md`, and registers the KB in `~/.claude/CLAUDE.md`. `/kb-setup` is idempotent — run it again any time to sync the latest plugin-owned files; it never overwrites your content.
 
-You can also target a folder without opening it: `/kb-setup ~/knowledge/tech-kb`.
+To skip the menu, target a folder directly — `/kb-setup ~/knowledge/tech-kb` — or sync every registered KB with `/kb-setup --all`.
 
 ## Daily use
 

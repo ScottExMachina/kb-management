@@ -1,15 +1,15 @@
 ---
-description: Create or sync a Personal Knowledge Base (idempotent — install, update, and migrate in one command). Run in a target folder, pass a path, or use --all to sync every registered KB. Supports --dry-run. Never overwrites your content.
+description: Create or sync a Personal Knowledge Base (idempotent — install, update, and migrate in one command). With no arguments it asks whether to start a new KB (prompting for the path) or sync an existing one; pass a <path> or --all to skip the menu. Supports --dry-run. Never overwrites your content.
 ---
 
 You are setting up or syncing a **Personal Knowledge Base (KB)**. This command is idempotent: run it on an empty folder to create a new KB, on an existing KB to sync plugin-owned files, or on a KB made by the old (pre-plugin) installer to migrate it. It must never destroy user content.
 
 ## Arguments
 
-- (none) — operate on the **current working directory** as the target KB.
-- `<path>` — operate on the KB at that path.
-- `--all` — operate on **every KB in the global registry** (see "Bulk mode").
-- `--dry-run` — report everything that would change, create, refresh, or delete, and write nothing. Honor this in every step below.
+- (none) — run the **Interactive entry routine** below. Do **not** assume the current working directory is the target.
+- `<path>` — operate directly on the KB at that path (no menu).
+- `--all` — operate on **every KB in the global registry** (see "Bulk mode"); no menu.
+- `--dry-run` — report everything that would change, create, refresh, or delete, and write nothing. Honor this in every mode, including the interactive routine.
 
 ## Source of truth
 
@@ -27,10 +27,27 @@ Inspect the target folder and decide which case it is:
 - **Current** — has `kb.config.md` at the root (already a plugin-era KB).
 - **Legacy** — has `.claude/CLAUDE.md` and/or copied-in `.claude/skills/kb-ingest|kb-query|kb-lint`, but **no** `kb.config.md` (made by the old installer).
 
+## Interactive entry routine (no arguments)
+
+When invoked with **no path and no `--all`**, don't assume the cwd is the target. First decide *what to do* with the user:
+
+1. **Gather state.** Read the KB Registry table in `~/.claude/CLAUDE.md` (domain/path/description for each registered KB). Classify the cwd with the "Classify the target" rules above so you know whether it's already a KB (Current/Legacy).
+2. **Show the menu.** Always present both options, numbered (in the style of `/kb-remove`):
+   1. **Start a new KB** — create a new KB at a path you choose.
+   2. **Sync an existing KB** — refresh or migrate a KB that's already set up.
+
+   If the cwd is itself a KB, say so and note it's the recommended sync target.
+3. **Branch on the choice:**
+   - **Start a new KB →** Ask for the **target path**. Offer defaults to choose from: the current folder, and the parent directories of any registered KBs (so new KBs land in a consistent location). Accept the path as the user types it — don't assume POSIX; Windows backslash paths and `~`/environment expansion are all fine. Then:
+     - If the chosen path already contains a `kb.config.md` or a legacy layout, tell the user "that folder is already a KB — syncing it instead" and run the **Single-KB routine** on it (it will classify as Current/Legacy). Never overwrite.
+     - Otherwise run the **Single-KB routine** as **New** at that path.
+   - **Sync an existing KB →** List the registered KBs numbered, plus the cwd if it's a KB that isn't in the registry yet; flag the cwd KB as the recommended choice when applicable. Have the user **pick one**, then run the **Single-KB routine** on it. If there are no registered KBs **and** the cwd isn't a KB, there's nothing to sync — say so and switch to **Start a new KB**. (Syncing every KB at once is the `--all` flag; don't offer an "all" choice here.)
+4. **Dry-run.** With `--dry-run`, still run the menu and prompts, but once the target is chosen, only report what *would* change and write nothing.
+
 ## Single-KB routine
 
 ### 1. Determine domain + description
-- **New:** ask the user for a **domain** (short, lowercase, no spaces) and a one-line **description**. If `~/.claude/CLAUDE.md` already lists KBs, offer their parent paths so the user can keep a consistent location.
+- **New:** ask the user for a **domain** (short, lowercase, no spaces) and a one-line **description**. The target path is already settled — by the `<path>` argument, or by the interactive routine's path prompt — so don't re-ask for a location here.
 - **Current:** read `domain` and `description` from the existing `kb.config.md`. Don't ask.
 - **Legacy:** if a registry row in `~/.claude/CLAUDE.md` matches this path, take `domain` and `description` from it. Otherwise ask.
 
